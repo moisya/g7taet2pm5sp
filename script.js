@@ -100,109 +100,148 @@ function getErrorMessage(error) {
     }
 }
 
-// ハイブリッドアプローチ: Gemini API + Google Cloud Text-to-Speech API
+// Gemini 2.5 Flash TTS直接音声生成
 async function generateSpeechWithGemini(apiKey, text, voice, style) {
-    try {
-        // Step 1: Gemini APIでテキストを最適化・処理
-        let processedText = text;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+    
+    // スタイル指示を含むテキストを構築
+    let prompt = text;
+    if (style && style.trim()) {
+        // スタイル指示を自然な形でテキストに組み込む
+        const styleInstructions = {
+            'ゆっくり': 'ゆっくりと話して: ',
+            '遅く': 'ゆっくりと話して: ',
+            '早く': '元気よく話して: ',
+            '速く': '元気よく話して: ',
+            '優しく': '優しく話して: ',
+            '感情豊か': '感情豊かに話して: ',
+            '明るく': '明るく話して: ',
+            '楽しく': '楽しく話して: ',
+            '丁寧': '丁寧に話して: ',
+            '穏やか': '穏やかに話して: '
+        };
         
-        if (style && style.trim()) {
-            processedText = await optimizeTextWithGemini(apiKey, text, style);
+        let stylePrefix = '';
+        for (const [key, prefix] of Object.entries(styleInstructions)) {
+            if (style.includes(key)) {
+                stylePrefix = prefix;
+                break;
+            }
         }
         
-        // Step 2: Google Cloud Text-to-Speech APIで音声生成
-        await generateSpeechWithTTS(apiKey, processedText, voice);
+        if (stylePrefix) {
+            prompt = stylePrefix + text;
+        } else {
+            prompt = `${style}で話して: ${text}`;
+        }
+    }
+    
+    // Gemini 2.5のvoice名マッピング
+    const voiceMapping = {
+        'ja-JP-Neural2-B': 'Kore',
+        'ja-JP-Neural2-C': 'Charon', 
+        'ja-JP-Neural2-D': 'Fenrir',
+        'ja-JP-Wavenet-A': 'Aoede',
+        'ja-JP-Wavenet-B': 'Puck',
+        'ja-JP-Wavenet-C': 'Charon',
+        'ja-JP-Wavenet-D': 'Fenrir'
+    };
+    
+    const geminiVoice = voiceMapping[voice] || 'Kore';
+    
+    const requestBody = {
+        contents: prompt,
+        generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+                voiceConfig: {
+                    prebuiltVoiceConfig: {
+                        voiceName: geminiVoice
+                    }
+                }
+            }
+        }
+    };
+    
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // Gemini 2.5からの音声データを取得
+        const audioData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        
+        if (!audioData) {
+            throw new Error('Gemini 2.5 TTSから音声データが返されませんでした');
+        }
+        
+        // PCMデータをWAVに変換してBlobを作成
+        const audioBlob = createWavBlob(audioData);
+        showAudioSection(audioBlob);
         
     } catch (error) {
-        console.error('Speech generation error:', error);
-        throw error;
+        console.error('Gemini 2.5 TTS Error:', error);
+        throw new Error(`Gemini 2.5 TTSでの音声生成に失敗しました: ${error.message}`);
     }
 }
 
-// Gemini APIでテキストを最適化する関数
-async function optimizeTextWithGemini(apiKey, text, style) {
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+// PCMデータをWAVファイル形式のBlobに変換
+function createWavBlob(base64PCMData) {
+    // Base64デコード
+    const pcmData = atob(base64PCMData);
+    const pcmArray = new Uint8Array(pcmData.length);
+    for (let i = 0; i < pcmData.length; i++) {
+        pcmArray[i] = pcmData.charCodeAt(i);
+    }
     
-    const prompt = `以下のテキストを「${style}」というスタイルで読み上げるのに適するよう、自然で読みやすく調整してください。元の意味は変えずに、読み上げに適した形に整えてください。
-
-元のテキスト: ${text}
-
-調整後のテキスト:`;
+    // WAVヘッダーを作成
+    const sampleRate = 24000;
+    const channels = 1;
+    const bitsPerSample = 16;
+    const dataSize = pcmArray.length;
+    const headerSize = 44;
+    const totalSize = headerSize + dataSize;
     
-    const requestBody = {
-        contents: [{
-            parts: [{
-                text: prompt
-            }]
-        }],
-        generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1024,
+    const wavBuffer = new ArrayBuffer(totalSize);
+    const view = new DataView(wavBuffer);
+    
+    // WAVヘッダーを書き込み
+    const writeString = (offset, string) => {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
         }
     };
     
-    const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-    });
+    writeString(0, 'RIFF');
+    view.setUint32(4, totalSize - 8, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, channels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * channels * bitsPerSample / 8, true);
+    view.setUint16(32, channels * bitsPerSample / 8, true);
+    view.setUint16(34, bitsPerSample, true);
+    writeString(36, 'data');
+    view.setUint32(40, dataSize, true);
     
-    if (!response.ok) {
-        console.warn('Geminiでのテキスト最適化に失敗、元のテキストを使用します');
-        return text;
-    }
+    // PCMデータをコピー
+    const wavArray = new Uint8Array(wavBuffer);
+    wavArray.set(pcmArray, headerSize);
     
-    const data = await response.json();
-    const optimizedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    return optimizedText || text;
-}
-
-// Google Cloud Text-to-Speech APIで音声生成
-async function generateSpeechWithTTS(apiKey, text, voice) {
-    const apiUrl = 'https://texttospeech.googleapis.com/v1/text:synthesize';
-    
-    const requestBody = {
-        input: { text: text },
-        voice: {
-            languageCode: 'ja-JP',
-            name: voice,
-            ssmlGender: voice.includes('B') || voice.includes('A') ? 'FEMALE' : 'MALE'
-        },
-        audioConfig: {
-            audioEncoding: 'MP3',
-            speakingRate: 1.0,
-            pitch: 0.0,
-            volumeGainDb: 0.0
-        }
-    };
-    
-    const response = await fetch(`${apiUrl}?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-    });
-    
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    if (!data.audioContent) {
-        throw new Error('音声データが返されませんでした');
-    }
-    
-    // Base64デコードしてBlobに変換
-    const audioBytes = atob(data.audioContent);
-    const audioArray = new Uint8Array(audioBytes.length);
-    for (let i = 0; i < audioBytes.length; i++) {
-        audioArray[i] = audioBytes.charCodeAt(i);
-    }
-    
-    const audioBlob = new Blob([audioArray], { type: 'audio/mp3' });
-    showAudioSection(audioBlob);
+    return new Blob([wavBuffer], { type: 'audio/wav' });
 }
 
 // ダウンロード処理
@@ -215,7 +254,7 @@ function handleDownload() {
     const url = URL.createObjectURL(currentAudioBlob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'gemini-tts-audio.mp3';
+    a.download = 'gemini-2.5-tts-audio.wav';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

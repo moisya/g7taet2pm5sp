@@ -11,9 +11,9 @@
         <header>
             <h1>Gemini TTS フロントエンドアプリケーション</h1>
             <p class="description">
-                Gemini API + Google Cloud Text-to-Speech APIを組み合わせた高品質テキスト読み上げアプリです。<br>
-                Gemini APIでテキストを最適化し、Google TTSで高品質な音声を生成します。<br>
-                ご利用にはGoogle Cloud APIキーが必要です。APIキーはブラウザ上でのみ使用され、サーバーには送信されません。
+                Gemini 2.5 Flash TTS機能を使用した最新の高品質テキスト読み上げアプリです。<br>
+                Geminiの最新音声合成技術で自然で表現豊かな音声を生成します。<br>
+                ご利用にはGemini APIキーが必要です。APIキーはブラウザ上でのみ使用され、サーバーには送信されません。
             </p>
         </header>
 
@@ -30,15 +30,15 @@
                 </div>
 
                 <div class="input-group">
-                    <label for="voice-select">話者選択</label>
+                    <label for="voice-select">話者選択 (Gemini 2.5 TTS)</label>
                     <select id="voice-select">
-                        <option value="ja-JP-Neural2-B">日本語 女性A (Neural2-B)</option>
-                        <option value="ja-JP-Neural2-C">日本語 男性A (Neural2-C)</option>
-                        <option value="ja-JP-Neural2-D">日本語 男性B (Neural2-D)</option>
-                        <option value="ja-JP-Wavenet-A">日本語 女性B (Wavenet-A)</option>
-                        <option value="ja-JP-Wavenet-B">日本語 女性C (Wavenet-B)</option>
-                        <option value="ja-JP-Wavenet-C">日本語 男性C (Wavenet-C)</option>
-                        <option value="ja-JP-Wavenet-D">日本語 男性D (Wavenet-D)</option>
+                        <option value="ja-JP-Neural2-B">Kore (女性・優しい声)</option>
+                        <option value="ja-JP-Neural2-C">Charon (男性・落ち着いた声)</option>
+                        <option value="ja-JP-Neural2-D">Fenrir (男性・力強い声)</option>
+                        <option value="ja-JP-Wavenet-A">Aoede (女性・明るい声)</option>
+                        <option value="ja-JP-Wavenet-B">Puck (中性・特徴的な声)</option>
+                        <option value="ja-JP-Wavenet-C">Charon (男性・穏やかな声)</option>
+                        <option value="ja-JP-Wavenet-D">Fenrir (男性・丁寧な声)</option>
                     </select>
                 </div>
 
