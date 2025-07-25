@@ -23,6 +23,49 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupEventListeners() {
     form.addEventListener('submit', handleFormSubmit);
     downloadBtn.addEventListener('click', handleDownload);
+    setupVoiceSelection();
+}
+
+// 音声選択UIの設定
+function setupVoiceSelection() {
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    const voiceCards = document.querySelectorAll('.voice-card');
+    const hiddenSelect = document.getElementById('voice-select');
+
+    // フィルタータブのクリックイベント
+    filterTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // アクティブタブの切り替え
+            filterTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            const filter = tab.dataset.filter;
+            
+            // カードの表示/非表示
+            voiceCards.forEach(card => {
+                if (filter === 'all' || card.dataset.category === filter) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // 音声カードのクリックイベント
+    voiceCards.forEach(card => {
+        card.addEventListener('click', () => {
+            // 選択状態の切り替え
+            voiceCards.forEach(c => c.setAttribute('data-selected', 'false'));
+            card.setAttribute('data-selected', 'true');
+
+            // 隠しselect要素の値を更新
+            const voiceName = card.dataset.voice;
+            hiddenSelect.innerHTML = `<option value="${voiceName}" selected>${voiceName}</option>`;
+            
+            console.log('Selected voice:', voiceName);
+        });
+    });
 }
 
 // フォーム送信処理
@@ -136,18 +179,8 @@ async function generateSpeechWithGemini(apiKey, text, voice, style) {
         }
     }
     
-    // Gemini 2.5のvoice名マッピング
-    const voiceMapping = {
-        'ja-JP-Neural2-B': 'Kore',
-        'ja-JP-Neural2-C': 'Charon', 
-        'ja-JP-Neural2-D': 'Fenrir',
-        'ja-JP-Wavenet-A': 'Aoede',
-        'ja-JP-Wavenet-B': 'Puck',
-        'ja-JP-Wavenet-C': 'Charon',
-        'ja-JP-Wavenet-D': 'Fenrir'
-    };
-    
-    const geminiVoice = voiceMapping[voice] || 'Kore';
+    // Gemini 2.5 TTS は直接voice名を使用
+    const geminiVoice = voice;
     
     const requestBody = {
         contents: [{

@@ -30,15 +30,203 @@
                 </div>
 
                 <div class="input-group">
-                    <label for="voice-select">話者選択 (Gemini 2.5 TTS)</label>
-                    <select id="voice-select">
-                        <option value="ja-JP-Neural2-B">Kore (女性・優しい声)</option>
-                        <option value="ja-JP-Neural2-C">Charon (男性・落ち着いた声)</option>
-                        <option value="ja-JP-Neural2-D">Fenrir (男性・力強い声)</option>
-                        <option value="ja-JP-Wavenet-A">Aoede (女性・明るい声)</option>
-                        <option value="ja-JP-Wavenet-B">Puck (中性・特徴的な声)</option>
-                        <option value="ja-JP-Wavenet-C">Charon (男性・穏やかな声)</option>
-                        <option value="ja-JP-Wavenet-D">Fenrir (男性・丁寧な声)</option>
+                    <label for="voice-select">音声キャラクター選択 (30種類)</label>
+                    
+                    <!-- フィルター用タブ -->
+                    <div class="voice-filter-tabs">
+                        <button type="button" class="filter-tab active" data-filter="all">すべて</button>
+                        <button type="button" class="filter-tab" data-filter="bright">明るい</button>
+                        <button type="button" class="filter-tab" data-filter="calm">落ち着いた</button>
+                        <button type="button" class="filter-tab" data-filter="energetic">エネルギッシュ</button>
+                        <button type="button" class="filter-tab" data-filter="professional">ビジネス</button>
+                    </div>
+                    
+                    <!-- 音声キャラクター選択カード -->
+                    <div class="voice-grid">
+                        <div class="voice-card" data-voice="Puck" data-category="energetic" data-selected="true">
+                            <div class="voice-name">Puck</div>
+                            <div class="voice-description">upbeat・元気で陽気</div>
+                            <div class="voice-tags"><span class="tag energetic">エネルギッシュ</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Kore" data-category="professional">
+                            <div class="voice-name">Kore</div>
+                            <div class="voice-description">corporate・企業的</div>
+                            <div class="voice-tags"><span class="tag professional">ビジネス</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Charon" data-category="professional">
+                            <div class="voice-name">Charon</div>
+                            <div class="voice-description">informative・説明的</div>
+                            <div class="voice-tags"><span class="tag professional">ビジネス</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Zephyr" data-category="bright">
+                            <div class="voice-name">Zephyr</div>
+                            <div class="voice-description">bright・明るい</div>
+                            <div class="voice-tags"><span class="tag bright">明るい</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Fenrir" data-category="energetic">
+                            <div class="voice-name">Fenrir</div>
+                            <div class="voice-description">excitable・興奮しやすい</div>
+                            <div class="voice-tags"><span class="tag energetic">エネルギッシュ</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Leda" data-category="bright">
+                            <div class="voice-name">Leda</div>
+                            <div class="voice-description">youthful・若々しい</div>
+                            <div class="voice-tags"><span class="tag bright">明るい</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Orus" data-category="professional">
+                            <div class="voice-name">Orus</div>
+                            <div class="voice-description">corporate・企業的</div>
+                            <div class="voice-tags"><span class="tag professional">ビジネス</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Aoede" data-category="bright">
+                            <div class="voice-name">Aoede</div>
+                            <div class="voice-description">breezy・爽やか</div>
+                            <div class="voice-tags"><span class="tag bright">明るい</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Callirrhoe" data-category="professional">
+                            <div class="voice-name">Callirrhoe</div>
+                            <div class="voice-description">expansive・広がりのある</div>
+                            <div class="voice-tags"><span class="tag professional">ビジネス</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Autonoe" data-category="bright">
+                            <div class="voice-name">Autonoe</div>
+                            <div class="voice-description">bright・明るい</div>
+                            <div class="voice-tags"><span class="tag bright">明るい</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Enceladus" data-category="calm">
+                            <div class="voice-name">Enceladus</div>
+                            <div class="voice-description">breathy・息づかいのある</div>
+                            <div class="voice-tags"><span class="tag calm">落ち着いた</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Iapetus" data-category="professional">
+                            <div class="voice-name">Iapetus</div>
+                            <div class="voice-description">clear・クリア</div>
+                            <div class="voice-tags"><span class="tag professional">ビジネス</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Umbriel" data-category="calm">
+                            <div class="voice-name">Umbriel</div>
+                            <div class="voice-description">relaxed・リラックス</div>
+                            <div class="voice-tags"><span class="tag calm">落ち着いた</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Algieba" data-category="calm">
+                            <div class="voice-name">Algieba</div>
+                            <div class="voice-description">smooth・滑らか</div>
+                            <div class="voice-tags"><span class="tag calm">落ち着いた</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Despina" data-category="calm">
+                            <div class="voice-name">Despina</div>
+                            <div class="voice-description">smooth・滑らか</div>
+                            <div class="voice-tags"><span class="tag calm">落ち着いた</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Erinome" data-category="professional">
+                            <div class="voice-name">Erinome</div>
+                            <div class="voice-description">clear・クリア</div>
+                            <div class="voice-tags"><span class="tag professional">ビジネス</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Algenib" data-category="professional">
+                            <div class="voice-name">Algenib</div>
+                            <div class="voice-description">gravelly・ざらざらした</div>
+                            <div class="voice-tags"><span class="tag professional">ビジネス</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Rasalgethi" data-category="professional">
+                            <div class="voice-name">Rasalgethi</div>
+                            <div class="voice-description">helpful・親切</div>
+                            <div class="voice-tags"><span class="tag professional">ビジネス</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Laomedeia" data-category="energetic">
+                            <div class="voice-name">Laomedeia</div>
+                            <div class="voice-description">upbeat・陽気</div>
+                            <div class="voice-tags"><span class="tag energetic">エネルギッシュ</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Achernar" data-category="calm">
+                            <div class="voice-name">Achernar</div>
+                            <div class="voice-description">soft・ソフト</div>
+                            <div class="voice-tags"><span class="tag calm">落ち着いた</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Alnilam" data-category="professional">
+                            <div class="voice-name">Alnilam</div>
+                            <div class="voice-description">confident・自信がある</div>
+                            <div class="voice-tags"><span class="tag professional">ビジネス</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Schedar" data-category="calm">
+                            <div class="voice-name">Schedar</div>
+                            <div class="voice-description">even・均等</div>
+                            <div class="voice-tags"><span class="tag calm">落ち着いた</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Gacrux" data-category="professional">
+                            <div class="voice-name">Gacrux</div>
+                            <div class="voice-description">mature・成熟した</div>
+                            <div class="voice-tags"><span class="tag professional">ビジネス</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Pulcherrima" data-category="energetic">
+                            <div class="voice-name">Pulcherrima</div>
+                            <div class="voice-description">forward・積極的</div>
+                            <div class="voice-tags"><span class="tag energetic">エネルギッシュ</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Achird" data-category="bright">
+                            <div class="voice-name">Achird</div>
+                            <div class="voice-description">friendly・フレンドリー</div>
+                            <div class="voice-tags"><span class="tag bright">明るい</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Zubenelgenubi" data-category="calm">
+                            <div class="voice-name">Zubenelgenubi</div>
+                            <div class="voice-description">casual・カジュアル</div>
+                            <div class="voice-tags"><span class="tag calm">落ち着いた</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Vindemiatrix" data-category="calm">
+                            <div class="voice-name">Vindemiatrix</div>
+                            <div class="voice-description">gentle・優しい</div>
+                            <div class="voice-tags"><span class="tag calm">落ち着いた</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Sadachbia" data-category="energetic">
+                            <div class="voice-name">Sadachbia</div>
+                            <div class="voice-description">lively・生き生きした</div>
+                            <div class="voice-tags"><span class="tag energetic">エネルギッシュ</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Sadaltager" data-category="professional">
+                            <div class="voice-name">Sadaltager</div>
+                            <div class="voice-description">knowledgeable・知識豊富</div>
+                            <div class="voice-tags"><span class="tag professional">ビジネス</span></div>
+                        </div>
+                        
+                        <div class="voice-card" data-voice="Sulafat" data-category="calm">
+                            <div class="voice-name">Sulafat</div>
+                            <div class="voice-description">warm・温かい</div>
+                            <div class="voice-tags"><span class="tag calm">落ち着いた</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 隠しのselect要素（フォーム送信用） -->
+                    <select id="voice-select" style="display: none;">
+                        <option value="Puck" selected>Puck</option>
                     </select>
                 </div>
 
