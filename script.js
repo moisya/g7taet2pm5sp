@@ -100,83 +100,109 @@ function getErrorMessage(error) {
     }
 }
 
-// Gemini APIで音声生成する関数
+// ハイブリッドアプローチ: Gemini API + Google Cloud Text-to-Speech API
 async function generateSpeechWithGemini(apiKey, text, voice, style) {
+    try {
+        // Step 1: Gemini APIでテキストを最適化・処理
+        let processedText = text;
+        
+        if (style && style.trim()) {
+            processedText = await optimizeTextWithGemini(apiKey, text, style);
+        }
+        
+        // Step 2: Google Cloud Text-to-Speech APIで音声生成
+        await generateSpeechWithTTS(apiKey, processedText, voice);
+        
+    } catch (error) {
+        console.error('Speech generation error:', error);
+        throw error;
+    }
+}
+
+// Gemini APIでテキストを最適化する関数
+async function optimizeTextWithGemini(apiKey, text, style) {
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-    // 音声スタイルの指示を含むプロンプトを構築
-    let prompt = `次のテキストを読み上げてください。『${text}』`;
     
-    if (style) {
-        // 自然言語でのスタイル指示をプロンプトの先頭に追加
-        prompt = `${style}。 ${prompt}`;
-    }
+    const prompt = `以下のテキストを「${style}」というスタイルで読み上げるのに適するよう、自然で読みやすく調整してください。元の意味は変えずに、読み上げに適した形に整えてください。
 
-    // 話者に基づく指示を追加
-    const voiceInstructions = {
-        'ja-JP-Neural2-B': '女性らしい優しい声で',
-        'ja-JP-Neural2-C': '男性らしい落ち着いた声で',
-        'ja-JP-Neural2-D': '男性らしい力強い声で',
-        'ja-JP-Wavenet-A': '女性らしい明るい声で',
-        'ja-JP-Wavenet-B': '女性らしい上品な声で',
-        'ja-JP-Wavenet-C': '男性らしい穏やかな声で',
-        'ja-JP-Wavenet-D': '男性らしい丁寧な声で'
-    };
+元のテキスト: ${text}
+
+調整後のテキスト:`;
     
-    if (voiceInstructions[voice]) {
-        prompt = `${voiceInstructions[voice]}${prompt}`;
-    }
-
     const requestBody = {
         contents: [{
             parts: [{
                 text: prompt
             }]
         }],
-        // 音声ファイル(MP3)を生成するよう指定
         generationConfig: {
-            responseMimeType: "audio/mp3"
+            temperature: 0.7,
+            maxOutputTokens: 1024,
         }
     };
-
-    try {
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        
-        // レスポンスから音声データ(Base64)を取り出す
-        const audioContent = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-
-        if (!audioContent) {
-            throw new Error('APIから音声データが返されませんでした。Gemini APIの音声生成機能が利用できない可能性があります。');
-        }
-
-        // Base64をデコードして、再生・ダウンロード可能なBlobオブジェクトに変換
-        const audioBytes = atob(audioContent);
-        const audioArray = new Uint8Array(audioBytes.length);
-        for (let i = 0; i < audioBytes.length; i++) {
-            audioArray[i] = audioBytes.charCodeAt(i);
-        }
-        const audioBlob = new Blob([audioArray], { type: 'audio/mp3' });
-        
-        // 成功したのでUIに表示
-        showAudioSection(audioBlob);
-        
-    } catch (error) {
-        console.error('Gemini API Error:', error);
-        throw new Error(`Gemini APIでの音声生成に失敗しました: ${error.message}`);
+    
+    const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    });
+    
+    if (!response.ok) {
+        console.warn('Geminiでのテキスト最適化に失敗、元のテキストを使用します');
+        return text;
     }
+    
+    const data = await response.json();
+    const optimizedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    return optimizedText || text;
+}
+
+// Google Cloud Text-to-Speech APIで音声生成
+async function generateSpeechWithTTS(apiKey, text, voice) {
+    const apiUrl = 'https://texttospeech.googleapis.com/v1/text:synthesize';
+    
+    const requestBody = {
+        input: { text: text },
+        voice: {
+            languageCode: 'ja-JP',
+            name: voice,
+            ssmlGender: voice.includes('B') || voice.includes('A') ? 'FEMALE' : 'MALE'
+        },
+        audioConfig: {
+            audioEncoding: 'MP3',
+            speakingRate: 1.0,
+            pitch: 0.0,
+            volumeGainDb: 0.0
+        }
+    };
+    
+    const response = await fetch(`${apiUrl}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.audioContent) {
+        throw new Error('音声データが返されませんでした');
+    }
+    
+    // Base64デコードしてBlobに変換
+    const audioBytes = atob(data.audioContent);
+    const audioArray = new Uint8Array(audioBytes.length);
+    for (let i = 0; i < audioBytes.length; i++) {
+        audioArray[i] = audioBytes.charCodeAt(i);
+    }
+    
+    const audioBlob = new Blob([audioArray], { type: 'audio/mp3' });
+    showAudioSection(audioBlob);
 }
 
 // ダウンロード処理
