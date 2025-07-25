@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini TTS フロントエンドアプリケーション</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Gemini TTS フロントエンドアプリケーション</h1>
+            <p class="description">
+                Google Gemini APIの音声生成機能を利用したテキスト読み上げアプリです。<br>
+                ご利用にはGoogle APIキーが必要です。APIキーはブラウザ上でのみ使用され、サーバーには送信されません。
+            </p>
+        </header>
+
+        <main>
+            <form id="tts-form">
+                <div class="input-group">
+                    <label for="api-key">Google APIキー</label>
+                    <input type="password" id="api-key" placeholder="あなたのGoogle APIキーを入力してください" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="text-input">読み上げテキスト</label>
+                    <textarea id="text-input" placeholder="音声に変換したいテキストを入力してください" rows="6" required></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label for="voice-select">話者選択</label>
+                    <select id="voice-select">
+                        <option value="ja-JP-Neural2-B">日本語 女性A (Neural2-B)</option>
+                        <option value="ja-JP-Neural2-C">日本語 男性A (Neural2-C)</option>
+                        <option value="ja-JP-Neural2-D">日本語 男性B (Neural2-D)</option>
+                        <option value="ja-JP-Wavenet-A">日本語 女性B (Wavenet-A)</option>
+                        <option value="ja-JP-Wavenet-B">日本語 女性C (Wavenet-B)</option>
+                        <option value="ja-JP-Wavenet-C">日本語 男性C (Wavenet-C)</option>
+                        <option value="ja-JP-Wavenet-D">日本語 男性D (Wavenet-D)</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="voice-style">音声スタイル指定（任意）</label>
+                    <textarea id="voice-style" placeholder="例: 優しく話して、ゆっくりと読んで、感情豊かに表現して" rows="3"></textarea>
+                </div>
+
+                <button type="submit" id="generate-btn">音声を生成</button>
+            </form>
+
+            <div id="status" class="status hidden"></div>
+
+            <div id="audio-section" class="audio-section hidden">
+                <h3>生成された音声</h3>
+                <audio id="audio-player" controls></audio>
+                <button id="download-btn" class="download-btn">音声をダウンロード</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Gemini TTS App - BYOK Model</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
