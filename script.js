@@ -150,7 +150,11 @@ async function generateSpeechWithGemini(apiKey, text, voice, style) {
     const geminiVoice = voiceMapping[voice] || 'Kore';
     
     const requestBody = {
-        contents: prompt,
+        contents: [{
+            parts: [{
+                text: prompt
+            }]
+        }],
         generationConfig: {
             responseModalities: ['AUDIO'],
             speechConfig: {
@@ -164,6 +168,9 @@ async function generateSpeechWithGemini(apiKey, text, voice, style) {
     };
     
     try {
+        console.log('Sending request to:', apiUrl);
+        console.log('Request body:', JSON.stringify(requestBody, null, 2));
+        
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
@@ -173,8 +180,24 @@ async function generateSpeechWithGemini(apiKey, text, voice, style) {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            try {
+                const errorData = await response.json();
+                console.error('API Error Details:', errorData);
+                errorMessage = errorData.error?.message || errorMessage;
+                
+                // 具体的なエラーメッセージを提供
+                if (response.status === 400) {
+                    errorMessage = `リクエストが無効です: ${errorMessage}`;
+                } else if (response.status === 403) {
+                    errorMessage = `APIキーが無効または権限がありません: ${errorMessage}`;
+                } else if (response.status === 404) {
+                    errorMessage = `Gemini 2.5 TTS機能が利用できません。APIキーにTTS機能が有効か確認してください`;
+                }
+            } catch (e) {
+                console.error('Error parsing error response:', e);
+            }
+            throw new Error(errorMessage);
         }
         
         const data = await response.json();
@@ -192,8 +215,77 @@ async function generateSpeechWithGemini(apiKey, text, voice, style) {
         
     } catch (error) {
         console.error('Gemini 2.5 TTS Error:', error);
-        throw new Error(`Gemini 2.5 TTSでの音声生成に失敗しました: ${error.message}`);
+        
+        // Gemini 2.5 TTSが利用できない場合のフォールバック
+        if (error.message.includes('404') || error.message.includes('not found')) {
+            console.warn('Gemini 2.5 TTS not available, falling back to Cloud TTS');
+            await fallbackToCloudTTS(apiKey, text, voice, style);
+        } else {
+            throw new Error(`Gemini 2.5 TTSでの音声生成に失敗しました: ${error.message}`);
+        }
     }
+}
+
+// フォールバック: Google Cloud Text-to-Speech API
+async function fallbackToCloudTTS(apiKey, text, voice, style) {
+    const apiUrl = 'https://texttospeech.googleapis.com/v1/text:synthesize';
+    
+    // スタイル指示をSSMLに変換
+    let inputText = text;
+    if (style && style.trim()) {
+        inputText = `<speak><prosody rate="medium" pitch="medium">${text}</prosody></speak>`;
+        
+        if (style.includes('ゆっくり') || style.includes('遅く')) {
+            inputText = inputText.replace('rate="medium"', 'rate="slow"');
+        } else if (style.includes('早く') || style.includes('速く')) {
+            inputText = inputText.replace('rate="medium"', 'rate="fast"');
+        }
+    }
+    
+    const requestBody = {
+        input: inputText.includes('<speak>') ? { ssml: inputText } : { text: inputText },
+        voice: {
+            languageCode: 'ja-JP',
+            name: voice,
+            ssmlGender: voice.includes('B') || voice.includes('A') ? 'FEMALE' : 'MALE'
+        },
+        audioConfig: {
+            audioEncoding: 'MP3',
+            speakingRate: 1.0,
+            pitch: 0.0,
+            volumeGainDb: 0.0
+        }
+    };
+    
+    const response = await fetch(`${apiUrl}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `Cloud TTS Error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.audioContent) {
+        throw new Error('Cloud TTSから音声データが返されませんでした');
+    }
+    
+    // Base64デコードしてBlobに変換
+    const audioBytes = atob(data.audioContent);
+    const audioArray = new Uint8Array(audioBytes.length);
+    for (let i = 0; i < audioBytes.length; i++) {
+        audioArray[i] = audioBytes.charCodeAt(i);
+    }
+    
+    const audioBlob = new Blob([audioArray], { type: 'audio/mp3' });
+    showAudioSection(audioBlob);
+    
+    // ユーザーに通知
+    showStatus('Gemini 2.5 TTSが利用できないため、Cloud TTSで音声を生成しました', 'success');
 }
 
 // PCMデータをWAVファイル形式のBlobに変換
