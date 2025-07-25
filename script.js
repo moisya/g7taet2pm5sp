@@ -104,7 +104,7 @@ function getErrorMessage(error) {
 
 // 音声生成関数（Gemini API使用）
 async function generateSpeech(apiKey, text, voice, style) {
-    const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+    const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
     
     // 音声スタイルの指示を含むプロンプトを構築
     let prompt = `以下のテキストを${voice}の声で読み上げてください。`;
