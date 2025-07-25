@@ -47,6 +47,51 @@
                     <textarea id="voice-style" placeholder="例: 優しく話して、ゆっくりと読んで、感情豊かに表現して" rows="3"></textarea>
                 </div>
 
+                <details class="advanced-settings">
+                    <summary>高度な音声設定</summary>
+                    
+                    <div class="settings-grid">
+                        <div class="input-group">
+                            <label for="speaking-rate">話速 (0.25-4.0倍)</label>
+                            <input type="range" id="speaking-rate" min="0.25" max="4.0" step="0.05" value="1.0">
+                            <span class="range-value" data-target="speaking-rate">1.0x</span>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="pitch">ピッチ (-20〜+20 semitones)</label>
+                            <input type="range" id="pitch" min="-20" max="20" step="0.1" value="0">
+                            <span class="range-value" data-target="pitch">0.0</span>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="volume-gain">音量ゲイン (-96〜+16 dB)</label>
+                            <input type="range" id="volume-gain" min="-96" max="16" step="0.1" value="0">
+                            <span class="range-value" data-target="volume-gain">0.0 dB</span>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="sample-rate">サンプルレート</label>
+                            <select id="sample-rate">
+                                <option value="8000">8kHz (電話品質)</option>
+                                <option value="16000">16kHz (標準品質)</option>
+                                <option value="24000" selected>24kHz (高品質)</option>
+                                <option value="48000">48kHz (最高品質)</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="audio-encoding">音声フォーマット</label>
+                            <select id="audio-encoding">
+                                <option value="LINEAR16" selected>WAV (非圧縮)</option>
+                                <option value="MP3">MP3 (圧縮)</option>
+                                <option value="OGG_OPUS">OGG Opus</option>
+                                <option value="MULAW">μ-law</option>
+                                <option value="ALAW">A-law</option>
+                            </select>
+                        </div>
+                    </div>
+                </details>
+
                 <button type="submit" id="generate-btn">音声を生成</button>
             </form>
 
