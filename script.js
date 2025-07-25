@@ -44,7 +44,7 @@ async function handleFormSubmit(event) {
         hideAudioSection();
         showStatus('音声を生成中...', 'loading');
         
-        await generateSpeech(apiKey, text, voice, style);
+        await generateSpeechWithGemini(apiKey, text, voice, style);
         
     } catch (error) {
         console.error('Error generating speech:', error);
@@ -56,7 +56,7 @@ async function handleFormSubmit(event) {
 // 入力値の検証
 function validateInputs(apiKey, text) {
     if (!apiKey) {
-        showStatus('Google APIキーを入力してください。', 'error');
+        showStatus('Gemini APIキーを入力してください。', 'error');
         apiKeyInput.focus();
         return false;
     }
@@ -74,10 +74,8 @@ function validateInputs(apiKey, text) {
     }
     
     // Gemini APIキーの基本的な形式チェック
-    if (!apiKey.startsWith('AIza') || apiKey.length < 30) {
-        showStatus('Gemini APIキーの形式が正しくない可能性があります。正しいAPIキーを入力してください。', 'error');
-        apiKeyInput.focus();
-        return false;
+    if (!apiKey.startsWith('AIza') || apiKey.length < 35) {
+        showStatus('Gemini APIキーの形式が正しくない可能性があります。', 'warning');
     }
     
     return true;
@@ -102,19 +100,18 @@ function getErrorMessage(error) {
     }
 }
 
-// 音声生成関数（Gemini API使用）
-async function generateSpeech(apiKey, text, voice, style) {
-    const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-    
+// Gemini APIで音声生成する関数
+async function generateSpeechWithGemini(apiKey, text, voice, style) {
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
     // 音声スタイルの指示を含むプロンプトを構築
-    let prompt = `以下のテキストを${voice}の声で読み上げてください。`;
+    let prompt = `次のテキストを読み上げてください。『${text}』`;
     
     if (style) {
-        prompt += `音声スタイル: ${style}。`;
+        // 自然言語でのスタイル指示をプロンプトの先頭に追加
+        prompt = `${style}。 ${prompt}`;
     }
-    
-    prompt += `\n\nテキスト: "${text}"`;
-    
+
     // 話者に基づく指示を追加
     const voiceInstructions = {
         'ja-JP-Neural2-B': '女性らしい優しい声で',
@@ -127,156 +124,59 @@ async function generateSpeech(apiKey, text, voice, style) {
     };
     
     if (voiceInstructions[voice]) {
-        prompt = prompt.replace(`${voice}の声で`, voiceInstructions[voice]);
+        prompt = `${voiceInstructions[voice]}${prompt}`;
     }
-    
-    prompt += '\n\n音声ファイルを生成して返してください。';
-    
+
     const requestBody = {
         contents: [{
             parts: [{
                 text: prompt
             }]
         }],
+        // 音声ファイル(MP3)を生成するよう指定
         generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 1024,
+            responseMimeType: "audio/mp3"
         }
     };
-    
+
     try {
-        const response = await fetch(`${apiUrl}?key=${apiKey}`, {
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(requestBody)
         });
-        
+
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         
-        if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-            throw new Error('Gemini APIから有効な応答が返されませんでした');
+        // レスポンスから音声データ(Base64)を取り出す
+        const audioContent = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+
+        if (!audioContent) {
+            throw new Error('APIから音声データが返されませんでした。Gemini APIの音声生成機能が利用できない可能性があります。');
         }
+
+        // Base64をデコードして、再生・ダウンロード可能なBlobオブジェクトに変換
+        const audioBytes = atob(audioContent);
+        const audioArray = new Uint8Array(audioBytes.length);
+        for (let i = 0; i < audioBytes.length; i++) {
+            audioArray[i] = audioBytes.charCodeAt(i);
+        }
+        const audioBlob = new Blob([audioArray], { type: 'audio/mp3' });
         
-        const responseText = data.candidates[0].content.parts[0].text;
-        
-        // 注意: Gemini APIは直接音声ファイルを生成できないため、
-        // Web Speech API または他の方法で音声合成を行います
-        await synthesizeSpeechWithWebAPI(responseText, voice, style);
+        // 成功したのでUIに表示
+        showAudioSection(audioBlob);
         
     } catch (error) {
         console.error('Gemini API Error:', error);
         throw new Error(`Gemini APIでの音声生成に失敗しました: ${error.message}`);
     }
-}
-
-// Web Speech APIを使用した音声合成
-async function synthesizeSpeechWithWebAPI(text, voice, style) {
-    if (!('speechSynthesis' in window)) {
-        throw new Error('このブラウザは音声合成をサポートしていません');
-    }
-    
-    return new Promise((resolve, reject) => {
-        const utterance = new SpeechSynthesisUtterance(text);
-        
-        // 日本語に設定
-        utterance.lang = 'ja-JP';
-        
-        // 音声設定
-        const voices = speechSynthesis.getVoices();
-        const japaneseVoices = voices.filter(v => v.lang.startsWith('ja'));
-        
-        if (japaneseVoices.length > 0) {
-            // 話者選択に基づいて声を選択
-            if (voice.includes('Neural2-B') || voice.includes('Wavenet-A') || voice.includes('Wavenet-B')) {
-                // 女性の声を優先
-                const femaleVoice = japaneseVoices.find(v => v.name.toLowerCase().includes('female') || v.name.includes('女'));
-                if (femaleVoice) utterance.voice = femaleVoice;
-            } else {
-                // 男性の声を優先
-                const maleVoice = japaneseVoices.find(v => v.name.toLowerCase().includes('male') || v.name.includes('男'));
-                if (maleVoice) utterance.voice = maleVoice;
-            }
-            
-            // 最初の日本語音声をデフォルトとして使用
-            if (!utterance.voice) {
-                utterance.voice = japaneseVoices[0];
-            }
-        }
-        
-        // スタイル設定
-        if (style) {
-            if (style.includes('ゆっくり') || style.includes('遅く')) {
-                utterance.rate = 0.7;
-            } else if (style.includes('早く') || style.includes('速く')) {
-                utterance.rate = 1.3;
-            } else {
-                utterance.rate = 1.0;
-            }
-            
-            if (style.includes('高い') || style.includes('高音')) {
-                utterance.pitch = 1.2;
-            } else if (style.includes('低い') || style.includes('低音')) {
-                utterance.pitch = 0.8;
-            } else {
-                utterance.pitch = 1.0;
-            }
-            
-            if (style.includes('大きく') || style.includes('音量')) {
-                utterance.volume = 1.0;
-            } else {
-                utterance.volume = 0.8;
-            }
-        } else {
-            utterance.rate = 1.0;
-            utterance.pitch = 1.0;
-            utterance.volume = 0.8;
-        }
-        
-        // 音声合成の完了を監視
-        utterance.onend = () => {
-            // Web Speech APIは直接音声ファイルを生成できないため、
-            // ダミーの音声Blobを作成
-            createDummyAudioBlob(text);
-            resolve();
-        };
-        
-        utterance.onerror = (event) => {
-            reject(new Error(`音声合成エラー: ${event.error}`));
-        };
-        
-        // 音声合成を開始
-        speechSynthesis.speak(utterance);
-    });
-}
-
-// Web Speech API用のダミー音声Blob作成
-function createDummyAudioBlob(text) {
-    // 簡単なダミー音声データ（実際の音声ではなく、プレースホルダー）
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const sampleRate = audioContext.sampleRate;
-    const duration = Math.max(text.length * 0.1, 1); // テキストの長さに基づく概算時間
-    const numSamples = Math.floor(sampleRate * duration);
-    
-    const audioBuffer = audioContext.createBuffer(1, numSamples, sampleRate);
-    const channelData = audioBuffer.getChannelData(0);
-    
-    // 無音のダミーデータを作成
-    for (let i = 0; i < numSamples; i++) {
-        channelData[i] = 0;
-    }
-    
-    // AudioBufferをBlobに変換（簡易版）
-    const dummyBlob = new Blob(['Web Speech API音声合成完了'], { type: 'audio/wav' });
-    showAudioSection(dummyBlob);
 }
 
 // ダウンロード処理
@@ -289,7 +189,7 @@ function handleDownload() {
     const url = URL.createObjectURL(currentAudioBlob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'generated-speech.mp3';
+    a.download = 'gemini-tts-audio.mp3';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
