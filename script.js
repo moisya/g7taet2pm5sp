@@ -109,16 +109,16 @@ async function generateSpeechWithGemini(apiKey, text, voice, style) {
     if (style && style.trim()) {
         // スタイル指示を自然な形でテキストに組み込む
         const styleInstructions = {
-            'ゆっくり': 'ゆっくりと話して: ',
-            '遅く': 'ゆっくりと話して: ',
-            '早く': '元気よく話して: ',
-            '速く': '元気よく話して: ',
-            '優しく': '優しく話して: ',
-            '感情豊か': '感情豊かに話して: ',
-            '明るく': '明るく話して: ',
-            '楽しく': '楽しく話して: ',
-            '丁寧': '丁寧に話して: ',
-            '穏やか': '穏やかに話して: '
+            'ゆっくり': 'Say slowly: ',
+            '遅く': 'Say slowly: ',
+            '早く': 'Say quickly: ',
+            '速く': 'Say quickly: ',
+            '優しく': 'Say gently: ',
+            '感情豊か': 'Say with emotion: ',
+            '明るく': 'Say cheerfully: ',
+            '楽しく': 'Say joyfully: ',
+            '丁寧': 'Say politely: ',
+            '穏やか': 'Say calmly: '
         };
         
         let stylePrefix = '';
@@ -132,7 +132,7 @@ async function generateSpeechWithGemini(apiKey, text, voice, style) {
         if (stylePrefix) {
             prompt = stylePrefix + text;
         } else {
-            prompt = `${style}で話して: ${text}`;
+            prompt = `Say in ${style} style: ${text}`;
         }
     }
     
@@ -201,6 +201,7 @@ async function generateSpeechWithGemini(apiKey, text, voice, style) {
         }
         
         const data = await response.json();
+        console.log('API Response:', data);
         
         // Gemini 2.5からの音声データを取得
         const audioData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
@@ -215,77 +216,8 @@ async function generateSpeechWithGemini(apiKey, text, voice, style) {
         
     } catch (error) {
         console.error('Gemini 2.5 TTS Error:', error);
-        
-        // Gemini 2.5 TTSが利用できない場合のフォールバック
-        if (error.message.includes('404') || error.message.includes('not found')) {
-            console.warn('Gemini 2.5 TTS not available, falling back to Cloud TTS');
-            await fallbackToCloudTTS(apiKey, text, voice, style);
-        } else {
-            throw new Error(`Gemini 2.5 TTSでの音声生成に失敗しました: ${error.message}`);
-        }
+        throw new Error(`Gemini 2.5 TTSでの音声生成に失敗しました: ${error.message}`);
     }
-}
-
-// フォールバック: Google Cloud Text-to-Speech API
-async function fallbackToCloudTTS(apiKey, text, voice, style) {
-    const apiUrl = 'https://texttospeech.googleapis.com/v1/text:synthesize';
-    
-    // スタイル指示をSSMLに変換
-    let inputText = text;
-    if (style && style.trim()) {
-        inputText = `<speak><prosody rate="medium" pitch="medium">${text}</prosody></speak>`;
-        
-        if (style.includes('ゆっくり') || style.includes('遅く')) {
-            inputText = inputText.replace('rate="medium"', 'rate="slow"');
-        } else if (style.includes('早く') || style.includes('速く')) {
-            inputText = inputText.replace('rate="medium"', 'rate="fast"');
-        }
-    }
-    
-    const requestBody = {
-        input: inputText.includes('<speak>') ? { ssml: inputText } : { text: inputText },
-        voice: {
-            languageCode: 'ja-JP',
-            name: voice,
-            ssmlGender: voice.includes('B') || voice.includes('A') ? 'FEMALE' : 'MALE'
-        },
-        audioConfig: {
-            audioEncoding: 'MP3',
-            speakingRate: 1.0,
-            pitch: 0.0,
-            volumeGainDb: 0.0
-        }
-    };
-    
-    const response = await fetch(`${apiUrl}?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-    });
-    
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || `Cloud TTS Error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (!data.audioContent) {
-        throw new Error('Cloud TTSから音声データが返されませんでした');
-    }
-    
-    // Base64デコードしてBlobに変換
-    const audioBytes = atob(data.audioContent);
-    const audioArray = new Uint8Array(audioBytes.length);
-    for (let i = 0; i < audioBytes.length; i++) {
-        audioArray[i] = audioBytes.charCodeAt(i);
-    }
-    
-    const audioBlob = new Blob([audioArray], { type: 'audio/mp3' });
-    showAudioSection(audioBlob);
-    
-    // ユーザーに通知
-    showStatus('Gemini 2.5 TTSが利用できないため、Cloud TTSで音声を生成しました', 'success');
 }
 
 // PCMデータをWAVファイル形式のBlobに変換
