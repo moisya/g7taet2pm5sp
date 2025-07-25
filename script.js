@@ -23,43 +23,6 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupEventListeners() {
     form.addEventListener('submit', handleFormSubmit);
     downloadBtn.addEventListener('click', handleDownload);
-    
-    // レンジスライダーのリアルタイム値更新
-    setupRangeSliders();
-}
-
-// レンジスライダーの値をリアルタイム更新
-function setupRangeSliders() {
-    const rangeInputs = document.querySelectorAll('input[type="range"]');
-    
-    rangeInputs.forEach(input => {
-        const updateValue = () => {
-            const valueSpan = document.querySelector(`span[data-target="${input.id}"]`);
-            if (valueSpan) {
-                let displayValue = input.value;
-                
-                switch(input.id) {
-                    case 'speaking-rate':
-                        displayValue = `${parseFloat(input.value).toFixed(2)}x`;
-                        break;
-                    case 'pitch':
-                        displayValue = parseFloat(input.value).toFixed(1);
-                        break;
-                    case 'volume-gain':
-                        displayValue = `${parseFloat(input.value).toFixed(1)} dB`;
-                        break;
-                }
-                
-                valueSpan.textContent = displayValue;
-            }
-        };
-        
-        // 初期値を設定
-        updateValue();
-        
-        // リアルタイム更新
-        input.addEventListener('input', updateValue);
-    });
 }
 
 // フォーム送信処理
@@ -199,17 +162,7 @@ async function generateSpeechWithGemini(apiKey, text, voice, style) {
                     prebuiltVoiceConfig: {
                         voiceName: geminiVoice
                     }
-                },
-                // 音声の速度 (0.25x - 4.0x)
-                speakingRate: parseFloat(document.getElementById('speaking-rate')?.value || '1.0'),
-                // 音声のピッチ (-20.0 - 20.0 semitones)
-                pitch: parseFloat(document.getElementById('pitch')?.value || '0.0'),
-                // 音量ゲイン (-96.0 - 16.0 dB)
-                volumeGainDb: parseFloat(document.getElementById('volume-gain')?.value || '0.0'),
-                // サンプルレート
-                sampleRateHertz: parseInt(document.getElementById('sample-rate')?.value || '24000'),
-                // 音声エフェクト
-                audioEncoding: document.getElementById('audio-encoding')?.value || 'LINEAR16'
+                }
             }
         }
     };
@@ -390,23 +343,10 @@ function handleDownload() {
         return;
     }
 
-    // 音声フォーマットに応じてファイル拡張子を決定
-    const encoding = document.getElementById('audio-encoding')?.value || 'LINEAR16';
-    const extensions = {
-        'LINEAR16': 'wav',
-        'MP3': 'mp3',
-        'OGG_OPUS': 'ogg',
-        'MULAW': 'wav',
-        'ALAW': 'wav'
-    };
-    
-    const extension = extensions[encoding] || 'wav';
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-
     const url = URL.createObjectURL(currentAudioBlob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `gemini-2.5-tts-${timestamp}.${extension}`;
+    a.download = 'gemini-2.5-tts-audio.wav';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
