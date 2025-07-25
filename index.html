@@ -11,16 +11,17 @@
         <header>
             <h1>Gemini TTS フロントエンドアプリケーション</h1>
             <p class="description">
-                Google Gemini APIの音声生成機能を利用したテキスト読み上げアプリです。<br>
-                ご利用にはGoogle APIキーが必要です。APIキーはブラウザ上でのみ使用され、サーバーには送信されません。
+                Google Gemini APIを利用したテキスト読み上げアプリです。<br>
+                Gemini APIで処理されたテキストをWeb Speech APIで音声合成します。<br>
+                ご利用にはGemini APIキーが必要です。APIキーはブラウザ上でのみ使用され、サーバーには送信されません。
             </p>
         </header>
 
         <main>
             <form id="tts-form">
                 <div class="input-group">
-                    <label for="api-key">Google APIキー</label>
-                    <input type="password" id="api-key" placeholder="あなたのGoogle APIキーを入力してください" required>
+                    <label for="api-key">Gemini APIキー</label>
+                    <input type="password" id="api-key" placeholder="あなたのGemini APIキーを入力してください" required>
                 </div>
 
                 <div class="input-group">
