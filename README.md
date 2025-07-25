@@ -8,7 +8,7 @@ Google Gemini 2.5 Flash TTS機能を使用した最新の高品質テキスト�
 - **BYOKモデル**: ユーザーが自身のGemini APIキーを使用
 - **静的サイト**: サーバー不要で動作
 - **レスポンシブデザイン**: モバイル・デスクトップ対応
-- **多彩な音声キャラクター**: Kore, Charon, Fenrir, Aoede, Puckなど
+- **30種類の音声キャラクター**: カード式UIで選択しやすい豊富な音声オプション
 - **音声スタイル制御**: 自然言語での詳細な音声調整
 - **高品質音声**: 24kHz WAVファイル出力
 
@@ -17,17 +17,50 @@ Google Gemini 2.5 Flash TTS機能を使用した最新の高品質テキスト�
 ### 基本機能
 - Gemini APIキー入力（セキュアな入力）
 - テキスト入力（最大5000文字）
-- 音声キャラクター選択（5種類）
+- 音声キャラクター選択（30種類・カード式UI）
 - 音声スタイル指定（自然言語）
 - 音声生成・再生
 - WAVファイルダウンロード（24kHz高品質）
 
-### 対応音声キャラクター
-- **Kore** (女性・優しい声)
-- **Charon** (男性・落ち着いた声)
-- **Fenrir** (男性・力強い声)
-- **Aoede** (女性・明るい声)
-- **Puck** (中性・特徴的な声)
+### 対応音声キャラクター（30種類）
+
+**明るい系（5種類）**
+- **Zephyr** - bright・明るい
+- **Leda** - youthful・若々しい  
+- **Aoede** - breezy・爽やか
+- **Autonoe** - bright・明るい
+- **Achird** - friendly・フレンドリー
+
+**落ち着いた系（9種類）**
+- **Enceladus** - breathy・息づかいのある
+- **Umbriel** - relaxed・リラックス
+- **Algieba** - smooth・滑らか
+- **Despina** - smooth・滑らか
+- **Achernar** - soft・ソフト
+- **Schedar** - even・均等
+- **Zubenelgenubi** - casual・カジュアル
+- **Vindemiatrix** - gentle・優しい
+- **Sulafat** - warm・温かい
+
+**エネルギッシュ系（5種類）**
+- **Puck** - upbeat・元気で陽気
+- **Fenrir** - excitable・興奮しやすい
+- **Laomedeia** - upbeat・陽気
+- **Pulcherrima** - forward・積極的
+- **Sadachbia** - lively・生き生きした
+
+**ビジネス系（10種類）**
+- **Kore** - corporate・企業的
+- **Charon** - informative・説明的
+- **Orus** - corporate・企業的
+- **Callirrhoe** - expansive・広がりのある
+- **Iapetus** - clear・クリア
+- **Erinome** - clear・クリア
+- **Algenib** - gravelly・ざらざらした
+- **Rasalgethi** - helpful・親切
+- **Alnilam** - confident・自信がある
+- **Gacrux** - mature・成熟した
+- **Sadaltager** - knowledgeable・知識豊富
 
 ## 使用方法
 
@@ -40,7 +73,9 @@ Google Gemini 2.5 Flash TTS機能を使用した最新の高品質テキスト�
 ### 2. アプリケーションの使用
 1. Gemini APIキーを入力
 2. 読み上げたいテキストを入力
-3. 音声キャラクターを選択
+3. 30種類の音声キャラクターからカード式UIで選択
+   - フィルタータブで「明るい」「落ち着いた」「エネルギッシュ」「ビジネス」から絞り込み
+   - 各キャラクターの特徴を確認してクリックで選択
 4. （任意）音声スタイルを指定
 5. 「音声を生成」ボタンをクリック
 6. 生成された高品質音声を再生・ダウンロード
@@ -91,7 +126,7 @@ npx serve .
 - **APIエンドポイント**: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent`
 - **音声フォーマット**: PCM → WAV変換（24kHz, 16bit, モノラル）
 - **最大テキスト長**: 5000文字
-- **対応音声キャラクター**: 5種類（Kore, Charon, Fenrir, Aoede, Puck）
+- **対応音声キャラクター**: 30種類（4カテゴリに分類：明るい系、落ち着いた系、エネルギッシュ系、ビジネス系）
 - **スタイル制御**: 自然言語による音声調整
 
 ## セキュリティ
@@ -134,7 +169,7 @@ npx serve .
 - ネットワーク接続を確認
 - Gemini APIクォータの残量を確認
 - 入力テキストの長さを確認（5000文字以内）
-- 音声キャラクター（Kore, Charon等）が正しく選択されているか確認
+- 30種類の音声キャラクターが正しく選択されているか確認（カード式UIで選択状態を視覚確認）
 
 ## 開発者向け情報
 
@@ -150,8 +185,8 @@ gemini-tts-app/
 ### カスタマイズ
 - `style.css`: UI/UXデザインの変更
 - `script.js`: Gemini API連携ロジックの修正
-- `index.html`: 音声キャラクター選択肢の追加
-- 音声キャラクター追加: `voiceMapping`オブジェクトを編集
+- `index.html`: 30種類の音声キャラクターカード式UI
+- 音声キャラクター追加: HTMLのvoice-cardセクションと対応するJavaScriptハンドラーを編集
 
 ## 貢献
 
